@@ -87,8 +87,9 @@
     position: absolute; left: 32%; top: 0%; width: 9%; height: 6%;
     background: #cdadd1; border-radius: 0 0 6px 6px; z-index: 2;
   }
+  /* moved reading-room so it sits between top and bottom bookcases (no overlap) */
   .reading-room {
-    position: absolute; left: 37%; top: 62%; width: 18%; height: 34%;
+    position: absolute; left: 37%; top: 44%; width: 18%; height: 12%;
     background: #6b6458; border-radius: 4px; cursor: pointer;
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 6%;
     padding: 8%;
@@ -97,7 +98,7 @@
   .reading-room:hover { filter: brightness(1.15); }
   .rr-table { background: #4a4438; border: 1px solid #2c2820; border-radius: 2px; }
   .reading-room-label {
-    position: absolute; left: 37%; top: 56%; width: 18%; text-align: center;
+    position: absolute; left: 37%; top: 38%; width: 18%; text-align: center;
     font-size: 0.62rem; color: rgba(255,255,255,0.7); letter-spacing: 0.5px;
   }
 

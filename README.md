@@ -1,0 +1,1 @@
+# Black History Exhibit\n\nInteractive HTML exhibit of Black American poetry and art across eras. Open index.html locally or via GitHub Pages.\n
