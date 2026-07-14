@@ -321,6 +321,10 @@ const eras = [
     ],
     art: { title: "Land of the Lotus Eaters", artist: "Robert S. Duncanson", year: "1861",
       style: "linear-gradient(160deg, #3d5a3a 0%, #6b8c4a 35%, #d9c67a 60%, #7a9bb5 100%)",
+      medium: "Oil on canvas",
+      materials: "Oil paint on canvas",
+      dimensions: "Unknown",
+      source: "",
       bio: "Robert S. Duncanson was one of the first Black American artists to achieve international recognition, working in the Hudson River School landscape tradition.",
       context: "Painted in 1861 as the Civil War began; Duncanson, based in Cincinnati near the Ohio River border with slave states, used sweeping landscape painting partly to sidestep the racial barriers that blocked Black portraitists from White patrons." },
     timeline: [
@@ -357,6 +361,10 @@ const eras = [
     ],
     art: { title: "Under the Oaks", artist: "Edward Mitchell Bannister", year: "1876",
       style: "linear-gradient(160deg, #4a5c33 0%, #7a8f4a 40%, #b5a15f 70%, #5c4a2e 100%)",
+      medium: "Oil on canvas",
+      materials: "Oil paint on canvas",
+      dimensions: "Unknown",
+      source: "",
       bio: "Edward Mitchell Bannister was a self-taught Rhode Island landscape painter and a founder of the Providence Art Club.",
       context: "This painting won a first-place medal at the 1876 Centennial Exposition in Philadelphia; when Bannister arrived to claim it, judges initially tried to withdraw the prize on learning he was Black, before fellow artists forced them to honor it." },
     timeline: [
@@ -395,6 +403,10 @@ const eras = [
     ],
     art: { title: "Aspects of Negro Life", artist: "Aaron Douglas", year: "1934",
       style: "linear-gradient(160deg, #2e2a4a 0%, #5a4a8c 30%, #b56a3a 60%, #2e1c14 100%)",
+      medium: "Mural (mixed media)",
+      materials: "Pigment on plaster / mural",
+      dimensions: "Large-scale (site-specific)",
+      source: "",
       bio: "Aaron Douglas was known as the 'father of Black American art,' developing a signature style of silhouetted figures and geometric color that defined the visual language of the Harlem Renaissance.",
       context: "Painted as a WPA-funded mural for the New York Public Library's Harlem branch during the Great Depression, tracing Black history from Africa through slavery to the urban North — federal arts funding was one of the few avenues supporting Black artists at the time." },
     timeline: [
@@ -429,6 +441,10 @@ const eras = [
     ],
     art: { title: "American People Series #20: Die", artist: "Faith Ringgold", year: "1967",
       style: "linear-gradient(160deg, #8c1c1c 0%, #4a1414 40%, #d9c67a 65%, #1a1a1a 100%)",
+      medium: "Acrylic on canvas",
+      materials: "Acrylic paint on canvas",
+      dimensions: "Unknown",
+      source: "",
       bio: "Faith Ringgold is a painter and quilt artist whose work confronts race and gender in American life; she later became known for her narrative story quilts.",
       context: "Painted during the 1967 uprisings in Newark and Detroit, sparked by police violence and economic inequality; Ringgold depicted graphic interracial violence to force viewers to confront the era's racial unrest directly." },
     timeline: [
@@ -470,6 +486,10 @@ const eras = [
     ],
     art: { title: "Untitled", artist: "Jean-Michel Basquiat", year: "1982",
       style: "linear-gradient(160deg, #d9c67a 0%, #2a2a2a 35%, #8c1c1c 65%, #1a1a1a 100%)",
+      medium: "Acrylic, oilstick on canvas",
+      materials: "Acrylic paint and oilstick on canvas",
+      dimensions: "Unknown",
+      source: "",
       bio: "Jean-Michel Basquiat rose from New York's downtown street art scene to become one of the era's most celebrated painters, fusing text, symbols, and raw figuration.",
       context: "Painted at the height of Basquiat's career, as Black artists gained new visibility in a gallery system that had long excluded them, while cities like New York faced disinvestment and rising inequality in Black neighborhoods." },
     timeline: [
@@ -503,6 +523,10 @@ const eras = [
     ],
     art: { title: "Analogous Colors", artist: "Titus Kaphar", year: "2020",
       style: "linear-gradient(160deg, #1a1a1a 0%, #8c1c1c 30%, #d9c67a 55%, #1a1a1a 100%)",
+      medium: "Oil on canvas",
+      materials: "Oil paint on canvas",
+      dimensions: "Unknown",
+      source: "",
       bio: "Titus Kaphar is a painter and sculptor known for reworking historical portraiture to surface erased or overlooked Black figures.",
       context: "Created for a June 2020 TIME magazine cover depicting a Black mother holding the outline of an absent child, painted in direct response to George Floyd's murder and the nationwide Black Lives Matter protests that followed." },
     timeline: [
@@ -620,13 +644,25 @@ function renderAll() {
                 <div class="frame"><div class="frame-inner" style="background:${era.art.style};"></div></div>
                 <div class="art-caption"><b>${era.art.title}</b>${era.art.artist}, ${era.art.year}</div>
               </div>
-              <div class="didactic-panel" onclick="openDidacticTimeline(currentEra)">
-                <div class="dp-title">${era.art.artist}</div>
-                <div class="dp-sub">About the Artist · ${era.art.year}</div>
-                <div class="dp-label">Biography</div>
-                <div class="dp-evdesc" style="margin-bottom:12px;">${era.art.bio}</div>
-                <div class="dp-label" style="margin-top:6px;">Related Events</div>
-                <div style="font-size:0.82rem; color:#3a2a1c; margin-top:8px;">Click this panel to view landmark events connected to the artist and artwork.</div>
+              <div class="didactic-panel">
+                <div class="dp-title">${era.art.title}</div>
+                <div class="dp-sub">${era.art.artist} · ${era.art.year}</div>
+
+                <div class="dp-label">Medium</div>
+                <div class="dp-evdesc">${era.art.medium || 'Unknown'}</div>
+
+                <div class="dp-label">Materials</div>
+                <div class="dp-evdesc">${era.art.materials || 'Unknown'}</div>
+
+                <div class="dp-label">Dimensions</div>
+                <div class="dp-evdesc">${era.art.dimensions || 'Unknown'}</div>
+
+                <div class="dp-label">Original Source</div>
+                <div class="dp-evdesc">${era.art.source ? `<a href="${era.art.source}" target="_blank" rel="noopener">View original</a>` : '<span style="color:#6e6248;">Not available online</span>'}</div>
+
+                <div style="margin-top:12px; text-align:right;">
+                  <button class="back-btn" onclick="openDidacticTimeline(currentEra)">Related Events</button>
+                </div>
               </div>
             </div>
             <div class="bookcase">
