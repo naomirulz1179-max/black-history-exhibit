@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #100d09;
+    color: #e8dfc9;
+    min-height: 100vh;
+    padding: 30px 16px 60px;
+  }
+  .exhibit-title { text-align: center; font-size: 2rem; letter-spacing: 2px; color: #d4af6a; margin-bottom: 4px; text-transform: uppercase; }
+  .exhibit-subtitle { text-align: center; color: #a89a7c; font-style: italic; font-size: 0.92rem; margin-bottom: 8px; }
+  .exhibit-instructions { text-align: center; color: #756a52; font-size: 0.76rem; margin-bottom: 28px; }
+
+  /* ---------- FLOOR PLAN ---------- */
+  .floorplan-wrap { max-width: 1100px; margin: 0 auto; }
+  .floorplan {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1180 / 620;
+    background: #adc48f;
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .zone {
+    position: absolute;
+    background: #4d6d4a;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6% 4% 4%;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15);
+  }
+  .zone:hover { filter: brightness(1.15); transform: scale(1.015); z-index: 5; }
+  .zone-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.6px;
+    color: #f0e9d0;
+    text-align: center;
+    margin-bottom: 2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .zone-years { font-size: 0.6rem; color: rgba(255,255,255,0.65); margin-bottom: 8%; }
+  .shelf-bars { display: flex; gap: 6%; flex: 1; width: 100%; justify-content: center; }
+  .shelf-bar {
+    width: 100%;
+    max-width: 34px;
+    background: linear-gradient(90deg, #7a4f28, #9c6b3a 40%, #7a4f28);
+    border: 1.5px solid #4a2f14;
+    border-radius: 2px;
+  }
+  .zone.slim { padding: 10% 12% 6%; }
+  .zone.slim .shelf-bars { max-width: 40px; margin: 0 auto; }
+
+  .lounge {
+    position: absolute;
+    left: 74%; top: -6%;
+    width: 40%; height: 112%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #c97a3f, #a85a2a 70%, #8c4a20);
+    cursor: pointer;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
+    z-index: 1;
+  }
+  .lounge:hover { filter: brightness(1.1); }
+  .lounge-label {
+    position: absolute; top: 8%; left: 50%; transform: translateX(-50%);
+    font-size: 0.75rem; letter-spacing: 1px; color: #fff2de;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); text-align: center; white-space: nowrap;
+  }
+  .table-round {
+    position: absolute;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #7a5636, #4d3620);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  }
+  .chair { position: absolute; width: 14px; height: 18px; background: #6b5a45; border: 1px solid #3a2e1c; border-radius: 2px; }
+
+  .entrance-mat {
+    position: absolute; left: 32%; top: 0%; width: 9%; height: 6%;
+    background: #cdadd1; border-radius: 0 0 6px 6px; z-index: 2;
+  }
+  .reading-room {
+    position: absolute; left: 37%; top: 62%; width: 18%; height: 34%;
+    background: #6b6458; border-radius: 4px; cursor: pointer;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6%;
+    padding: 8%;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.2);
+  }
+  .reading-room:hover { filter: brightness(1.15); }
+  .rr-table { background: #4a4438; border: 1px solid #2c2820; border-radius: 2px; }
+  .reading-room-label {
+    position: absolute; left: 37%; top: 56%; width: 18%; text-align: center;
+    font-size: 0.62rem; color: rgba(255,255,255,0.7); letter-spacing: 0.5px;
+  }
+
+  /* ---------- ERA ROOM OVERLAY (realistic bookcase) ---------- */
+  .full-overlay {
+    position: fixed; inset: 0; background: rgba(6,5,3,0.94);
+    z-index: 200; overflow-y: auto; padding: 30px 16px 60px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #d4af6a; color: #241c0f; border: none;
+    padding: 8px 16px; border-radius: 20px; font-size: 0.8rem;
+    cursor: pointer; margin: 0 auto 20px; display: flex; width: fit-content;
+    font-family: Georgia, serif; letter-spacing: 0.4px;
+  }
+  .back-btn:hover { background: #e2c184; }
+
+  .room { max-width: 960px; margin: 0 auto 50px auto; border-radius: 6px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,0.55); }
+  .wall { padding: 30px 34px 20px; position: relative; }
+  .wall::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.35)); }
+  .room-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .era-name { font-size: 1.25rem; color: #f3e6c4; letter-spacing: 1px; }
+  .era-years { font-size: 0.8rem; color: rgba(255,255,255,0.65); }
+  .era-blurb { color: rgba(255,255,255,0.78); font-size: 0.85rem; line-height: 1.5; max-width: 640px; margin-bottom: 20px; }
+  .wall-content { display: flex; gap: 26px; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; }
+
+  .frame-wrap { cursor: pointer; text-align: center; }
+  .frame { width: 150px; height: 190px; padding: 10px; background: linear-gradient(135deg, #c9a24a, #7a5b23 40%, #c9a24a 60%, #6b4d1c); border-radius: 2px; box-shadow: 0 10px 22px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.3); transition: transform 0.2s ease; }
+  .frame-wrap:hover .frame { transform: translateY(-6px) scale(1.02); }
+  .frame-inner { width: 100%; height: 100%; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4), inset 0 2px 10px rgba(0,0,0,0.45); position: relative; overflow: hidden; }
+  .art-caption { margin-top: 8px; font-size: 0.68rem; color: rgba(255,255,255,0.75); max-width: 150px; line-height: 1.3; }
+  .art-caption b { display: block; color: #e8dfc9; font-size: 0.72rem; }
+
+  .didactic-panel { flex: 1 1 260px; max-width: 360px; background: #f7f1e1; color: #2c2416; border-radius: 3px; padding: 16px 20px; box-shadow: 0 10px 22px rgba(0,0,0,0.4); border-left: 4px solid #9a6b2f; }
+  .didactic-panel .dp-title { font-size: 0.95rem; font-weight: bold; color: #6b2e1f; margin-bottom: 2px; }
+  .didactic-panel .dp-sub { font-style: italic; color: #6e6248; font-size: 0.8rem; margin-bottom: 4px; }
+  .didactic-panel .dp-label { font-size: 0.6rem; letter-spacing: 1.2px; text-transform: uppercase; color: #9a6b2f; border-bottom: 1px solid #d8c9a3; padding-bottom: 4px; margin: 12px 0 10px; }
+  .dp-event { display: flex; gap: 10px; margin-bottom: 12px; }
+  .dp-event:last-child { margin-bottom: 0; }
+  .dp-icon { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.25); border: 2px solid #f7f1e1; }
+  .dp-icon svg { width: 15px; height: 15px; }
+  .dp-year { font-weight: bold; color: #a8461e; font-size: 0.72rem; letter-spacing: 0.4px; }
+  .dp-type { display: inline-block; font-size: 0.52rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 1px 6px; border-radius: 7px; margin-left: 5px; color: #fff; position: relative; top: -1px; }
+  .dp-evtitle { font-weight: bold; font-size: 0.82rem; margin: 2px 0; }
+  .dp-evdesc { font-size: 0.74rem; line-height: 1.4; color: #3a2a1c; }
+
+  .bookcase { background: linear-gradient(180deg, #5a3d22, #3f2a17); padding: 16px 16px 0; border-radius: 4px 4px 0 0; box-shadow: inset 0 0 0 3px rgba(0,0,0,0.25), 0 6px 18px rgba(0,0,0,0.4); }
+  .books-row { display: flex; gap: 12px; align-items: flex-end; padding: 14px 10px 0; flex-wrap: wrap; }
+  .shelf-board { height: 22px; margin: 0 -16px; background: repeating-linear-gradient(90deg, #7a5230 0px, #6e492b 3px, #7a5230 6px), linear-gradient(180deg, #8a5f36, #4e3419); box-shadow: inset 0 3px 4px rgba(255,255,255,0.08), inset 0 -6px 10px rgba(0,0,0,0.5), 0 6px 8px rgba(0,0,0,0.45); border-bottom: 2px solid #2c1c0d; }
+
+  .book-spine { width: 46px; height: 178px; border-radius: 2px 5px 5px 2px; cursor: pointer; display: flex; align-items: flex-start; justify-content: center; padding-top: 12px; position: relative; box-shadow: 2px 3px 6px rgba(0,0,0,0.5), inset -4px 0 8px rgba(0,0,0,0.35), inset 3px 0 3px rgba(255,255,255,0.15); transition: transform 0.18s ease; overflow: hidden; }
+  .book-spine:hover { transform: translateY(-8px); }
+  .book-spine::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, transparent 0px, transparent 24px, rgba(0,0,0,0.3) 24px, rgba(0,0,0,0.3) 27px, transparent 27px, transparent 30px); pointer-events: none; }
+  .book-spine::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 3px; background: rgba(255,255,255,0.18); pointer-events: none; }
+  .spine-text { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.62rem; font-weight: bold; letter-spacing: 0.4px; color: #f2e6c2; text-shadow: 0 1px 1px rgba(0,0,0,0.5); z-index: 2; }
+
+  /* ---------- BOOKENDS (era timeline triggers) ---------- */
+  .bookend {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 178px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    background: linear-gradient(160deg, #2c2418 0%, #17130c 100%);
+    box-shadow: 2px 3px 6px rgba(0,0,0,0.55), inset -4px 0 8px rgba(0,0,0,0.4), inset 3px 0 3px rgba(255,255,255,0.08);
+    border: 2px solid rgba(0,0,0,0.45);
+    transition: transform 0.18s ease, filter 0.18s ease;
+  }
+  .bookend:hover { transform: translateY(-8px); filter: brightness(1.25); }
+  .bookend svg { width: 22px; height: 22px; }
+  .bookend-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.56rem;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #d4af6a;
+    white-space: nowrap;
+  }
+
+  .overlay { position: fixed; inset: 0; background: rgba(8,6,4,0.9); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 20px; animation: fadeIn 0.2s ease; }
+
+  .cover-card { width: 290px; position: relative; animation: popIn 0.22s ease; }
+  .cover-face { height: 410px; border-radius: 3px; padding: 24px 22px; color: #fff; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 25px 55px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.25); }
+  .cover-face::before { content: ''; position: absolute; inset: 12px; border: 1px solid rgba(255,255,255,0.4); pointer-events: none; }
+  .cover-face::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 14px; background: repeating-linear-gradient(180deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px); }
+  .cover-era-tag { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; }
+  .cover-title { font-size: 1.35rem; line-height: 1.3; font-weight: bold; margin: 12px 0 6px; text-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+  .cover-author { font-size: 0.95rem; font-style: italic; opacity: 0.95; }
+  .cover-year { font-size: 0.78rem; opacity: 0.8; margin-top: 4px; }
+  .cover-hint { font-size: 0.66rem; opacity: 0.75; }
+
+  .bookmark-tab { position: absolute; top: 0; right: 22px; width: 32px; height: 58px; background: #b5301f; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); cursor: pointer; box-shadow: -2px 3px 6px rgba(0,0,0,0.35); display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; transition: transform 0.15s ease, background 0.15s ease; z-index: 5; }
+  .bookmark-tab:hover { transform: translateY(4px); background: #d1432e; }
+  .bookmark-tab svg { width: 13px; height: 13px; }
+
+  .close-x, .info-close { position: absolute; top: -14px; left: -14px; width: 32px; height: 32px; border-radius: 50%; border: none; font-size: 1rem; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.4); }
+  .close-x { background: #e8dfc9; color: #24201a; }
+  .info-close { background: #6b2e1f; color: #f7f1e1; }
+
+  .info-card { width: min(560px, 90vw); max-height: 80vh; overflow-y: auto; background: #f7f1e1; color: #2c2416; border-radius: 6px; padding: 30px 32px; position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.6); animation: popIn 0.22s ease; }
+  .info-card h2 { font-size: 1.25rem; color: #6b2e1f; margin-bottom: 2px; }
+  .info-author-line { font-style: italic; color: #6e6248; margin-bottom: 16px; font-size: 0.9rem; }
+  .info-section { margin-bottom: 16px; }
+  .info-section h3 { font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase; color: #9a6b2f; border-bottom: 1px solid #d8c9a3; padding-bottom: 4px; margin-bottom: 8px; }
+  .info-section p { font-size: 0.88rem; line-height: 1.6; }
+
+  .art-card { width: min(420px, 92vw); position: relative; animation: popIn 0.22s ease; }
+  .art-frame-big { padding: 16px; background: linear-gradient(135deg, #c9a24a, #7a5b23 40%, #c9a24a 60%, #6b4d1c); border-radius: 3px; box-shadow: 0 25px 55px rgba(0,0,0,0.6); }
+  .art-canvas-big { height: 320px; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4), inset 0 2px 14px rgba(0,0,0,0.45); position: relative; overflow: hidden; }
+  .art-plaque { margin-top: 14px; background: #2c2416; color: #f0e6cc; padding: 12px 16px; border-radius: 3px; text-align: center; }
+  .art-plaque .t { font-size: 0.95rem; font-weight: bold; }
+  .art-plaque .s { font-size: 0.76rem; opacity: 0.8; margin-top: 2px; }
+  .art-plaque button { margin-top: 10px; background: #9a6b2f; color: #fff; border: none; padding: 7px 14px; border-radius: 3px; font-size: 0.72rem; letter-spacing: 0.5px; cursor: pointer; text-transform: uppercase; }
+  .art-plaque button:hover { background: #b5813d; }
+
+  /* gallery grid overlay */
+  .gallery-grid-wrap { max-width: 900px; margin: 0 auto; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 22px; padding: 10px; }
+  .gallery-tile { cursor: pointer; text-align: center; }
+  .gallery-tile .frame { width: 100%; height: 170px; margin: 0 auto; }
+  .gallery-tile .art-caption { max-width: none; }
+
+  .about-card { max-width: 480px; margin: 0 auto; text-align: center; }
+
+  /* ---------- ERA TIMELINE POPUP ---------- */
+  .timeline-card { width: min(640px, 92vw); max-height: 82vh; overflow-y: auto; background: #f7f1e1; color: #2c2416; border-radius: 6px; padding: 30px 32px; position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.6); animation: popIn 0.22s ease; }
+  .timeline-card h2 { font-size: 1.25rem; color: #6b2e1f; margin-bottom: 2px; }
+  .timeline-era-line { font-style: italic; color: #6e6248; margin-bottom: 18px; font-size: 0.9rem; }
+  .tl-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 22px; font-size: 0.66rem; color: #6e6248; }
+  .tl-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .tl-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .tl-track { position: relative; padding-left: 4px; }
+  .tl-track::before { content: ''; position: absolute; left: 21px; top: 4px; bottom: 22px; width: 2px; background: #d8c9a3; }
+  .tl-event { display: flex; gap: 14px; margin-bottom: 20px; position: relative; }
+  .tl-event:last-child { margin-bottom: 0; }
+  .tl-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 3px 8px rgba(0,0,0,0.25); border: 2px solid #f7f1e1; }
+  .tl-icon svg { width: 20px; height: 20px; }
+  .tl-body { padding-top: 2px; }
+  .tl-year { font-weight: bold; color: #a8461e; font-size: 0.82rem; letter-spacing: 0.5px; }
+  .tl-type { display: inline-block; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 8px; margin-left: 6px; color: #fff; position: relative; top: -1px; }
+  .tl-title { font-weight: bold; margin: 3px 0 3px 0; font-size: 0.98rem; }
+  .tl-desc { font-size: 0.85rem; line-height: 1.45; color: #3a2a1c; }
+</style>
+</head>
+<body>
+
+<div class="exhibit-title">Black American Poetry &amp; Art</div>
+<div class="exhibit-subtitle">A Museum Floor Plan Across Six Eras of Verse, Image, and Struggle</div>
+<div class="exhibit-instructions">Click a bookcase to enter that era · click a bookend for the era timeline · click the round lounge to browse artworks</div>
+
+<div class="floorplan-wrap"><div class="floorplan" id="floorplan"></div></div>
+
+<div id="overlayRoot"></div>
+
+<script>
+const typeColors = {
+  legislation: '#2f6b3c',
+  amendment: '#1f4e8c',
+  court: '#5a2e8c',
+  protest: '#c47a1e',
+  riot: '#a8231e',
+  organization: '#8c6d1f',
+  milestone: '#2f7c7c'
+};
+
+function iconFor(type) {
+  const icons = {
+    legislation: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
+    amendment: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 3v18M6 8l6-5 6 5M4 21h16"/></svg>',
+    court: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2l2 5h-4z"/><circle cx="12" cy="12" r="1"/><path d="M4 8h16M6 8l-3 6h6zM18 8l-3 6h6z"/><path d="M12 8v12M8 20h8"/></svg>',
+    protest: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M8 3v6M8 3h6l-2 3 2 3H8"/><path d="M8 21v-8"/><circle cx="16" cy="15" r="3"/><path d="M16 18v3M14 21h4"/></svg>',
+    riot: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+    organization: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="3"/><circle cx="5" cy="16" r="2.5"/><circle cx="19" cy="16" r="2.5"/><path d="M12 11v2M9 15l-2.5 1M15 15l2.5 1"/></svg>',
+    milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 21V4M5 4h11l-3 4 3 4H5"/></svg>'
+  };
+  return icons[type] || icons.milestone;
+}
+
+function bookendIcon() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="#d4af6a" stroke-width="1.8"><path d="M4 19V5a1 1 0 011-1h6a1 1 0 011 1v14M4 19h8M4 19H2M12 19h2M18 5a2 2 0 012 2v10a2 2 0 01-2 2h-2V5h2z"/></svg>';
+}
+
+const typeLabels = {
+  legislation: 'Legislation',
+  amendment: 'Amendment',
+  court: 'Court Case',
+  protest: 'Protest/March',
+  riot: 'Riot/Uprising',
+  organization: 'Organization Founded',
+  milestone: 'Milestone'
+};
+const legendHTML = Object.keys(typeLabels).map(k =>
+  `<span><span class="tl-dot" style="background:${typeColors[k]}"></span>${typeLabels[k]}</span>`
+).join('');
+
+const eras = [
+  {
+    name: "Antebellum Era", years: "1619 – 1865",
+    wall: "linear-gradient(160deg, #4a3524, #2e2013)",
+    color1: "#5a3a29", color2: "#2f1e12",
+    blurb: "Verse written under chattel slavery, some composed by enslaved poets themselves, circulating as evidence of Black intellect and as tools for the abolitionist cause.",
+    books: [
+      { title: "On Liberty and Slavery", author: "George Moses Horton", year: "1829",
+        bio: "George Moses Horton was enslaved in North Carolina and taught himself to read; he sold poems to University of North Carolina students to earn money, becoming one of the first Black Southern poets to be published.",
+        context: "Written as the American Colonization Society and abolitionist societies clashed over slavery's future, and shortly before Nat Turner's 1831 rebellion hardened Southern slave codes and restricted Black literacy and assembly." },
+      { title: "The Slave Mother", author: "Frances E. W. Harper", year: "1854",
+        bio: "Frances E. W. Harper was a free-born Black poet, abolitionist, and suffragist from Baltimore who became one of the most widely read Black poets of the 19th century.",
+        context: "Published a year after the Fugitive Slave Act of 1850 intensified the separation of enslaved families through recapture, and amid rising tensions that would culminate in the Dred Scott decision of 1857 and the Civil War." }
+    ],
+    art: { title: "Land of the Lotus Eaters", artist: "Robert S. Duncanson", year: "1861",
+      style: "linear-gradient(160deg, #3d5a3a 0%, #6b8c4a 35%, #d9c67a 60%, #7a9bb5 100%)",
+      bio: "Robert S. Duncanson was one of the first Black American artists to achieve international recognition, working in the Hudson River School landscape tradition.",
+      context: "Painted in 1861 as the Civil War began; Duncanson, based in Cincinnati near the Ohio River border with slave states, used sweeping landscape painting partly to sidestep the racial barriers that blocked Black portraitists from White patrons." },
+    timeline: [
+      { year: '1619', type: 'milestone', title: 'First Enslaved Africans Arrive in Virginia', desc: 'A ship carrying enslaved Africans arrived at Point Comfort, Virginia, beginning over two centuries of chattel slavery in what became the United States.' },
+      { year: '1712', type: 'riot', title: 'New York Slave Revolt', desc: 'Enslaved New Yorkers staged an armed uprising in Manhattan, leading to brutal reprisals and stricter slave codes.' },
+      { year: '1793', type: 'legislation', title: 'Fugitive Slave Act of 1793', desc: 'Allowed enslavers to reclaim escaped enslaved people across state lines, including from free states.' },
+      { year: '1808', type: 'legislation', title: 'Importation of Enslaved People Banned', desc: 'Congress banned the international slave trade, though the domestic trade and slavery itself continued to expand.' },
+      { year: '1831', type: 'riot', title: "Nat Turner's Rebellion", desc: 'An armed uprising of enslaved people in Virginia killed dozens of white residents, prompting sweeping crackdowns on Black literacy and assembly across the South.' },
+      { year: '1850', type: 'legislation', title: 'Fugitive Slave Act of 1850', desc: 'Strengthened federal enforcement of returning escaped enslaved people, compelling Northern citizens to assist in their capture.' },
+      { year: '1857', type: 'court', title: 'Dred Scott v. Sandford', desc: 'The Supreme Court ruled that Black Americans, enslaved or free, could not be U.S. citizens and had no standing to sue in federal court.' },
+      { year: '1861', type: 'milestone', title: 'Civil War Begins', desc: 'War broke out between the Union and Confederacy, with slavery at its core, reshaping the nation\'s political future.' },
+      { year: '1863', type: 'legislation', title: 'Emancipation Proclamation', desc: 'President Lincoln declared enslaved people in Confederate states to be free, reframing the war as a fight against slavery.' }
+    ],
+    panelEvents: [
+      { year: '1820', type: 'legislation', title: 'Missouri Compromise', desc: 'Admitted Missouri as a slave state and Maine as a free state, banning slavery north of latitude 36°30′ in the remaining Louisiana Territory.' },
+      { year: '1822', type: 'protest', title: "Denmark Vesey's Planned Uprising", desc: 'A free Black carpenter in Charleston organized a large-scale rebellion plot that was discovered before it could be carried out, leading to mass executions and harsher slave codes.' },
+      { year: '1839', type: 'court', title: 'The Amistad Case', desc: 'Africans who seized control of the slave ship La Amistad won their freedom before the U.S. Supreme Court, a rare early legal victory against the slave trade.' },
+      { year: '1852', type: 'milestone', title: "Publication of Uncle Tom's Cabin", desc: "Harriet Beecher Stowe's novel intensified national debate over slavery, selling widely across the North and provoking backlash in the South." },
+      { year: '1859', type: 'protest', title: "John Brown's Raid on Harpers Ferry", desc: 'Abolitionist John Brown led an armed raid on a federal armory, hoping to spark a wider slave rebellion; his execution deepened the North-South divide.' }
+    ]
+  },
+  {
+    name: "Reconstruction Era", years: "1865 – 1896",
+    wall: "linear-gradient(160deg, #55401f, #332512)",
+    color1: "#6b4a23", color2: "#3a2810",
+    blurb: "Verse from the brief window of Black citizenship and political power after emancipation, through its violent reversal and the rise of Jim Crow.",
+    books: [
+      { title: "Learning to Read", author: "Frances E. W. Harper", year: "1872",
+        bio: "Harper continued writing after emancipation, becoming a leading voice on Black literacy, education, and civic participation during Reconstruction.",
+        context: "Published as the Freedmen's Bureau ran thousands of schools for formerly enslaved people and the 15th Amendment (1870) granted Black men the vote — gains that would be rolled back after the Compromise of 1877 ended Reconstruction." },
+      { title: "We Wear the Mask", author: "Paul Laurence Dunbar", year: "1895",
+        bio: "Paul Laurence Dunbar was the first Black American poet to gain national literary fame, writing in both standard English and dialect verse.",
+        context: "Published as Jim Crow laws hardened across the South following Reconstruction's collapse, one year before Plessy v. Ferguson (1896) constitutionalized 'separate but equal' segregation." }
+    ],
+    art: { title: "Under the Oaks", artist: "Edward Mitchell Bannister", year: "1876",
+      style: "linear-gradient(160deg, #4a5c33 0%, #7a8f4a 40%, #b5a15f 70%, #5c4a2e 100%)",
+      bio: "Edward Mitchell Bannister was a self-taught Rhode Island landscape painter and a founder of the Providence Art Club.",
+      context: "This painting won a first-place medal at the 1876 Centennial Exposition in Philadelphia; when Bannister arrived to claim it, judges initially tried to withdraw the prize on learning he was Black, before fellow artists forced them to honor it." },
+    timeline: [
+      { year: '1865', type: 'amendment', title: '13th Amendment Ratified', desc: 'Abolished slavery and involuntary servitude throughout the United States, except as punishment for a crime.' },
+      { year: '1865', type: 'organization', title: "Freedmen's Bureau Established", desc: 'Federal agency created to assist formerly enslaved people with education, employment, healthcare, and legal aid.' },
+      { year: '1865-66', type: 'legislation', title: 'Black Codes Enacted', desc: 'Southern states passed restrictive laws limiting the rights and freedoms of Black Americans, re-imposing many controls of slavery.' },
+      { year: '1866', type: 'legislation', title: 'Civil Rights Act of 1866', desc: 'Declared that all persons born in the U.S. were citizens, granting them rights to make contracts, sue, and own property regardless of race.' },
+      { year: '1868', type: 'amendment', title: '14th Amendment Ratified', desc: 'Granted citizenship to all persons born or naturalized in the U.S. and guaranteed equal protection under the law.' },
+      { year: '1870', type: 'amendment', title: '15th Amendment Ratified', desc: 'Prohibited denying the right to vote based on race, color, or previous condition of servitude.' },
+      { year: '1870s', type: 'organization', title: 'Rise of the Ku Klux Klan', desc: 'White supremacist violence and intimidation campaigns targeted Black voters, officials, and communities across the South.' },
+      { year: '1875', type: 'legislation', title: 'Civil Rights Act of 1875', desc: 'Guaranteed equal treatment in public accommodations and transportation, later struck down by the Supreme Court in 1883.' },
+      { year: '1877', type: 'milestone', title: 'Compromise of 1877', desc: 'Federal troops withdrawn from the South, ending Reconstruction and enabling the rise of Jim Crow segregation.' },
+      { year: '1896', type: 'court', title: 'Plessy v. Ferguson', desc: 'Supreme Court upheld racial segregation under the "separate but equal" doctrine, legitimizing Jim Crow laws nationwide.' }
+    ],
+    panelEvents: [
+      { year: '1866', type: 'riot', title: 'Memphis Massacre', desc: 'White mobs, including police, attacked Black residents of Memphis over three days, killing dozens and burning homes, schools, and churches.' },
+      { year: '1866', type: 'riot', title: 'New Orleans Massacre', desc: 'A white mob attacked Black and white delegates at a Louisiana constitutional convention seeking Black suffrage, killing dozens of attendees.' },
+      { year: '1867', type: 'legislation', title: 'Reconstruction Acts', desc: 'Congress divided the former Confederacy into military districts and required new state constitutions guaranteeing Black male suffrage for readmission to the Union.' },
+      { year: '1870', type: 'milestone', title: 'Hiram Revels Seated in the Senate', desc: 'Revels became the first Black American to serve in the U.S. Senate, representing Mississippi.' },
+      { year: '1871', type: 'legislation', title: 'Ku Klux Klan Act', desc: 'Gave the federal government power to intervene against Klan violence and suppress conspiracies to deny citizens their civil rights.' },
+      { year: '1873', type: 'riot', title: 'Colfax Massacre', desc: 'A white militia killed scores of Black men in Louisiana following a disputed election, one of the deadliest instances of Reconstruction-era violence.' }
+    ]
+  },
+  {
+    name: "Harlem Renaissance", years: "1918 – 1937",
+    wall: "linear-gradient(160deg, #6b2f2f, #3a1717)",
+    color1: "#7a2f2f", color2: "#3f1414",
+    blurb: "A flowering of Black poetry, music, and visual art centered in Harlem, driven by the Great Migration and a bold new assertion of Black cultural identity.",
+    books: [
+      { title: "If We Must Die", author: "Claude McKay", year: "1919",
+        bio: "Claude McKay was a Jamaican-born poet and novelist whose work helped launch the Harlem Renaissance and gave voice to militant self-defense against racial violence.",
+        context: "Written during the Red Summer of 1919, a wave of white supremacist mob violence against Black communities in over three dozen U.S. cities, following Black veterans' return from World War I demanding full citizenship." },
+      { title: "The Weary Blues", author: "Langston Hughes", year: "1926",
+        bio: "Langston Hughes was a central figure of the Harlem Renaissance whose poetry fused jazz and blues rhythms with everyday Black life and speech.",
+        context: "Published as the Great Migration reshaped Northern cities and Harlem became a hub of Black artistic and intellectual life, with the NAACP and Urban League backing new Black literary magazines and prizes." }
+    ],
+    art: { title: "Aspects of Negro Life", artist: "Aaron Douglas", year: "1934",
+      style: "linear-gradient(160deg, #2e2a4a 0%, #5a4a8c 30%, #b56a3a 60%, #2e1c14 100%)",
+      bio: "Aaron Douglas was known as the 'father of Black American art,' developing a signature style of silhouetted figures and geometric color that defined the visual language of the Harlem Renaissance.",
+      context: "Painted as a WPA-funded mural for the New York Public Library's Harlem branch during the Great Depression, tracing Black history from Africa through slavery to the urban North — federal arts funding was one of the few avenues supporting Black artists at the time." },
+    timeline: [
+      { year: '1909', type: 'organization', title: 'NAACP Founded', desc: 'The National Association for the Advancement of Colored People formed to fight for civil rights through legal action and advocacy.' },
+      { year: '1910s-30s', type: 'milestone', title: 'The Great Migration', desc: 'Millions of Black Americans moved from the rural South to cities in the North, Midwest, and West seeking work and escape from segregation.' },
+      { year: '1919', type: 'riot', title: 'Red Summer', desc: 'A wave of white-led racial violence and massacres swept dozens of American cities during the summer and fall.' },
+      { year: '1921', type: 'riot', title: 'Tulsa Race Massacre', desc: 'A white mob destroyed the prosperous Greenwood District ("Black Wall Street") in Tulsa, Oklahoma, killing an estimated hundreds of residents.' },
+      { year: '1925', type: 'organization', title: 'Brotherhood of Sleeping Car Porters', desc: 'A. Philip Randolph founded the first major Black-led labor union, organizing porters for better wages and conditions.' },
+      { year: '1931', type: 'court', title: 'Scottsboro Boys Case', desc: 'Nine Black teenagers were falsely accused of assault in Alabama; the case became a landmark fight against racial injustice in the courts.' },
+      { year: '1935', type: 'riot', title: 'Harlem Riot of 1935', desc: 'Unrest broke out in Harlem amid the Great Depression, fueled by unemployment, poor housing, and police mistreatment of Black residents.' }
+    ],
+    panelEvents: [
+      { year: '1917', type: 'riot', title: 'East St. Louis Riots', desc: 'White mobs attacked Black residents amid labor tensions and wartime migration, killing dozens and displacing thousands from their homes.' },
+      { year: '1923', type: 'riot', title: 'Rosewood Massacre', desc: 'A white mob destroyed the predominantly Black town of Rosewood, Florida, killing residents and erasing the community entirely.' },
+      { year: '1926', type: 'organization', title: 'Negro History Week Founded', desc: 'Historian Carter G. Woodson established an annual observance to promote the study of Black history, later expanded into Black History Month.' },
+      { year: '1929', type: 'milestone', title: 'Great Depression Begins', desc: 'The economic collapse hit Black communities especially hard, with Black workers often the first laid off and last rehired.' },
+      { year: '1935', type: 'legislation', title: 'Works Progress Administration Founded', desc: 'New Deal jobs program funded Black artists, writers, and muralists through initiatives like the Federal Art Project, supporting work such as Douglas\'s Harlem murals.' }
+    ]
+  },
+  {
+    name: "Civil Rights & Black Power", years: "1954 – 1975",
+    wall: "linear-gradient(160deg, #1f4a3a, #10251c)",
+    color1: "#1f4a3a", color2: "#0f2318",
+    blurb: "Verse written amid mass mobilization for legal equality, and later, a more militant call for Black self-determination and cultural pride.",
+    books: [
+      { title: "Ballad of Birmingham", author: "Dudley Randall", year: "1965",
+        bio: "Dudley Randall was a poet and founder of Broadside Press, which published many major Black poets of the civil rights era.",
+        context: "Written in response to the 1963 bombing of the 16th Street Baptist Church in Birmingham, which killed four Black girls, an event that galvanized support for the Civil Rights Act of 1964." },
+      { title: "Black Art", author: "Amiri Baraka", year: "1966",
+        bio: "Amiri Baraka (formerly LeRoi Jones) was a poet and playwright who founded the Black Arts Movement, calling for art that directly served Black political liberation.",
+        context: "Published the year after the Watts uprising of 1965 and amid the rise of the Black Power movement and the founding of the Black Panther Party in 1966, as activists shifted from integrationist to nationalist strategies." }
+    ],
+    art: { title: "American People Series #20: Die", artist: "Faith Ringgold", year: "1967",
+      style: "linear-gradient(160deg, #8c1c1c 0%, #4a1414 40%, #d9c67a 65%, #1a1a1a 100%)",
+      bio: "Faith Ringgold is a painter and quilt artist whose work confronts race and gender in American life; she later became known for her narrative story quilts.",
+      context: "Painted during the 1967 uprisings in Newark and Detroit, sparked by police violence and economic inequality; Ringgold depicted graphic interracial violence to force viewers to confront the era's racial unrest directly." },
+    timeline: [
+      { year: '1954', type: 'court', title: 'Brown v. Board of Education', desc: 'Supreme Court unanimously ruled that racial segregation in public schools was unconstitutional, overturning Plessy v. Ferguson.' },
+      { year: '1955-56', type: 'protest', title: 'Montgomery Bus Boycott', desc: 'A 381-day boycott sparked by Rosa Parks\' arrest led to the desegregation of Montgomery\'s public buses.' },
+      { year: '1957', type: 'protest', title: 'Little Rock Nine', desc: 'Nine Black students integrated Little Rock Central High School under federal protection amid violent opposition.' },
+      { year: '1960', type: 'protest', title: 'Greensboro Sit-ins', desc: 'Black college students staged sit-ins at segregated lunch counters, sparking a wave of similar nonviolent protests nationwide.' },
+      { year: '1963', type: 'protest', title: 'March on Washington', desc: 'Over 250,000 people gathered in Washington, D.C., where Dr. Martin Luther King Jr. delivered his "I Have a Dream" speech.' },
+      { year: '1964', type: 'legislation', title: 'Civil Rights Act of 1964', desc: 'Outlawed discrimination based on race, color, religion, sex, or national origin in employment and public accommodations.' },
+      { year: '1965', type: 'protest', title: 'Selma to Montgomery ("Bloody Sunday")', desc: 'Peaceful marchers were violently attacked by state troopers on the Edmund Pettus Bridge, galvanizing support for voting rights.' },
+      { year: '1965', type: 'legislation', title: 'Voting Rights Act of 1965', desc: 'Prohibited racial discrimination in voting, banning literacy tests and providing federal oversight of elections in discriminatory jurisdictions.' },
+      { year: '1965', type: 'riot', title: 'Watts Rebellion', desc: 'Six days of unrest in Los Angeles followed an incident of police violence, highlighting frustrations over poverty and police brutality.' },
+      { year: '1966', type: 'organization', title: 'Black Panther Party Founded', desc: 'Formed in Oakland to address police brutality and promote Black self-determination through community programs and activism.' },
+      { year: '1968', type: 'milestone', title: 'Assassination of Dr. King', desc: 'Martin Luther King Jr. was assassinated in Memphis, Tennessee, sparking uprisings in over 100 cities.' },
+      { year: '1968', type: 'legislation', title: 'Fair Housing Act', desc: 'Prohibited discrimination in the sale, rental, and financing of housing based on race, religion, or national origin.' }
+    ],
+    panelEvents: [
+      { year: '1961', type: 'protest', title: 'Freedom Rides', desc: 'Activists rode interstate buses into the segregated South to test enforcement of desegregation rulings, facing mob violence and arrests.' },
+      { year: '1963', type: 'protest', title: 'Birmingham Campaign', desc: 'Nonviolent protests, including the Children\'s Crusade, met police fire hoses and dogs, drawing national attention to Southern segregation.' },
+      { year: '1963', type: 'riot', title: '16th Street Baptist Church Bombing', desc: 'A Ku Klux Klan bombing in Birmingham killed four Black girls, becoming a galvanizing tragedy for the movement.' },
+      { year: '1964', type: 'protest', title: 'Freedom Summer', desc: 'Volunteers registered Black voters in Mississippi amid violent resistance, including the murders of three civil rights workers.' },
+      { year: '1967', type: 'court', title: 'Loving v. Virginia', desc: 'The Supreme Court struck down state laws banning interracial marriage as unconstitutional.' },
+      { year: '1967', type: 'riot', title: 'Newark and Detroit Uprisings', desc: 'Major unrest broke out in both cities following incidents of police violence, among the deadliest urban uprisings of the decade.' },
+      { year: '1968', type: 'milestone', title: 'Kerner Commission Report', desc: 'A federal commission concluded that white racism, not Black militancy, was the primary cause of the era\'s urban uprisings.' }
+    ]
+  },
+  {
+    name: "Post–Civil Rights Era", years: "1976 – 2012",
+    wall: "linear-gradient(160deg, #3a2f5c, #1e1830)",
+    color1: "#3a2f5c", color2: "#1c1730",
+    blurb: "Verse reckoning with slavery's long memory and Black life after legal segregation ended, even as structural inequality persisted.",
+    books: [
+      { title: "Won't You Celebrate with Me", author: "Lucille Clifton", year: "1993",
+        bio: "Lucille Clifton was a poet and educator whose spare, powerful verse centered Black womanhood, survival, and self-invention.",
+        context: "Published during a period of rising mass incarceration under early-1990s crime policy, as Black feminist and womanist thought, building on the Combahee River Collective's 1977 statement, shaped a new generation of poets." },
+      { title: "Still I Rise", author: "Maya Angelou", year: "1978",
+        bio: "Maya Angelou was a poet, memoirist, and civil rights activist who worked with both Martin Luther King Jr. and Malcolm X before becoming one of America's most celebrated writers.",
+        context: "Published as affirmative action policies faced early legal challenges, foreshadowing the 1978 Supreme Court case Regents of the University of California v. Bakke, which reshaped the terms of racial equity in American institutions." }
+    ],
+    art: { title: "Untitled", artist: "Jean-Michel Basquiat", year: "1982",
+      style: "linear-gradient(160deg, #d9c67a 0%, #2a2a2a 35%, #8c1c1c 65%, #1a1a1a 100%)",
+      bio: "Jean-Michel Basquiat rose from New York's downtown street art scene to become one of the era's most celebrated painters, fusing text, symbols, and raw figuration.",
+      context: "Painted at the height of Basquiat's career, as Black artists gained new visibility in a gallery system that had long excluded them, while cities like New York faced disinvestment and rising inequality in Black neighborhoods." },
+    timeline: [
+      { year: '1978', type: 'court', title: 'Regents of UC v. Bakke', desc: 'Supreme Court upheld affirmative action in principle but ruled rigid racial quotas in admissions unconstitutional.' },
+      { year: '1980s', type: 'legislation', title: 'War on Drugs Escalates', desc: 'Federal and state policy expanded mandatory minimum sentencing, contributing to a sharp rise in Black incarceration rates.' },
+      { year: '1992', type: 'riot', title: 'Los Angeles Uprising', desc: 'Widespread unrest followed the acquittal of officers filmed beating Rodney King, exposing tensions over police violence.' },
+      { year: '1995', type: 'protest', title: 'Million Man March', desc: 'Hundreds of thousands of Black men gathered in Washington, D.C. to promote unity, family values, and civic responsibility.' },
+      { year: '2008', type: 'milestone', title: 'Election of Barack Obama', desc: 'Barack Obama was elected the first Black President of the United States.' }
+    ],
+    panelEvents: [
+      { year: '1981', type: 'legislation', title: 'Early Reagan-Era Budget Cuts', desc: 'Sweeping cuts to housing, welfare, and social program funding disproportionately affected low-income Black communities.' },
+      { year: '1986', type: 'legislation', title: 'Anti-Drug Abuse Act', desc: 'Established a 100-to-1 sentencing disparity between crack and powder cocaine offenses, driving disproportionate incarceration of Black defendants.' },
+      { year: '1988', type: 'legislation', title: 'Fair Housing Amendments Act', desc: 'Strengthened the original Fair Housing Act by adding stronger enforcement mechanisms and expanding protected classes.' },
+      { year: '1991', type: 'milestone', title: 'Rodney King Beating', desc: 'The videotaped beating of Rodney King by Los Angeles police officers became a national symbol of police brutality against Black Americans.' },
+      { year: '1994', type: 'legislation', title: '1994 Crime Bill', desc: 'The Violent Crime Control and Law Enforcement Act expanded policing and prison funding, accelerating mass incarceration trends.' },
+      { year: '1999', type: 'milestone', title: 'Killing of Amadou Diallo', desc: 'An unarmed Guinean immigrant was shot by NYPD officers, sparking major protests over police use of force.' }
+    ]
+  },
+  {
+    name: "Black Lives Matter Era", years: "2013 – Present",
+    wall: "linear-gradient(160deg, #8c1c1c, #451111)",
+    color1: "#8c1c1c", color2: "#420f0f",
+    blurb: "Verse and art responding to a new wave of activism against police violence and mass incarceration, amplified by social media and youth organizing.",
+    books: [
+      { title: "Citizen: An American Lyric", author: "Claudia Rankine", year: "2014",
+        bio: "Claudia Rankine is a poet whose genre-blending work combines lyric poetry, essay, and image to examine everyday and systemic racism.",
+        context: "Published the same year as the police killing of Michael Brown in Ferguson, Missouri, and the resulting protests; the Black Lives Matter movement, founded in 2013 after George Zimmerman's acquittal in the killing of Trayvon Martin, was gaining national force." },
+      { title: "The Tradition", author: "Jericho Brown", year: "2019",
+        bio: "Jericho Brown is a poet whose work explores Black identity, masculinity, and violence, and who invented the 'duplex' poetic form.",
+        context: "Published amid continued national reckoning over police killings and the expansion of Black Lives Matter chapters nationwide, ahead of the 2020 protests following George Floyd's murder." }
+    ],
+    art: { title: "Analogous Colors", artist: "Titus Kaphar", year: "2020",
+      style: "linear-gradient(160deg, #1a1a1a 0%, #8c1c1c 30%, #d9c67a 55%, #1a1a1a 100%)",
+      bio: "Titus Kaphar is a painter and sculptor known for reworking historical portraiture to surface erased or overlooked Black figures.",
+      context: "Created for a June 2020 TIME magazine cover depicting a Black mother holding the outline of an absent child, painted in direct response to George Floyd's murder and the nationwide Black Lives Matter protests that followed." },
+    timeline: [
+      { year: '2013', type: 'organization', title: 'Black Lives Matter Founded', desc: 'Movement founded after the acquittal of George Zimmerman in the shooting death of Trayvon Martin, growing into a national organizing force.' },
+      { year: '2014', type: 'protest', title: 'Ferguson Protests', desc: 'The killing of Michael Brown by police sparked sustained protests and a national reckoning over policing and race.' },
+      { year: '2015', type: 'protest', title: 'Baltimore Uprising', desc: 'Protests and unrest followed the death of Freddie Gray while in Baltimore police custody, prompting scrutiny of policing practices nationwide.' },
+      { year: '2020', type: 'protest', title: 'George Floyd Protests', desc: 'The killing of George Floyd by Minneapolis police sparked what are considered among the largest protest movements in U.S. history.' },
+      { year: '2021', type: 'legislation', title: 'Juneteenth National Holiday', desc: 'Juneteenth, marking the end of slavery in the U.S., was established as a federal holiday.' },
+      { year: '2022', type: 'milestone', title: 'Ketanji Brown Jackson Confirmed', desc: 'Became the first Black woman to serve as a U.S. Supreme Court Justice.' }
+    ],
+    panelEvents: [
+      { year: '2012', type: 'milestone', title: 'Killing of Trayvon Martin', desc: 'An unarmed Black teenager was fatally shot in Florida by a neighborhood watch volunteer, an event that preceded and helped catalyze the Black Lives Matter movement.' },
+      { year: '2016', type: 'protest', title: "Colin Kaepernick's Kneeling Protest", desc: 'NFL quarterback Colin Kaepernick began kneeling during the national anthem to protest police brutality and racial injustice, sparking nationwide debate.' },
+      { year: '2018', type: 'legislation', title: 'First Step Act', desc: 'Federal criminal justice reform reduced some mandatory minimum sentences and expanded early-release programs affecting the federal prison population.' },
+      { year: '2020', type: 'milestone', title: 'Killings of Breonna Taylor and Ahmaud Arbery', desc: 'The deaths of Breonna Taylor during a police raid and Ahmaud Arbery while jogging, both in early 2020, intensified national attention on racialized violence ahead of George Floyd\'s killing.' },
+      { year: '2021', type: 'court', title: 'Conviction of Derek Chauvin', desc: 'The former Minneapolis police officer was convicted of murder in the killing of George Floyd, a rare instance of accountability for police violence.' }
+    ]
+  }
+];
+
+const zoneLayout = [
+  { left:'0%',  top:'0%',  width:'26%', height:'42%', bars:3 },
+  { left:'48%', top:'0%',  width:'26%', height:'42%', bars:4 },
+  { left:'0%',  top:'58%', width:'26%', height:'42%', bars:3 },
+  { left:'48%', top:'58%', width:'26%', height:'42%', bars:4 },
+  { left:'88%', top:'2%',  width:'10%', height:'34%', bars:1, slim:true },
+  { left:'88%', top:'64%', width:'10%', height:'34%', bars:1, slim:true }
+];
+
+let view = 'floor'; // floor | era | gallery
+let currentEra = null;
+let selectedBook = null, showInfo = false;
+let selectedArt = null, showArtInfo = false;
+let galleryPick = null, galleryPickInfo = false;
+let selectedTimeline = null;
+let selectedPanelTimeline = null;
+
+function renderFloorplan() {
+  const fp = document.getElementById('floorplan');
+  let html = '';
+  zoneLayout.forEach((z, i) => {
+    const era = eras[i];
+    html += `<div class="zone${z.slim ? ' slim' : ''}" style="left:${z.left};top:${z.top};width:${z.width};height:${z.height};" onclick="enterEra(${i})">
+      <div class="zone-label">${era.name}</div>
+      <div class="zone-years">${era.years}</div>
+      <div class="shelf-bars">${Array(z.bars).fill('<div class="shelf-bar"></div>').join('')}</div>
+    </div>`;
+  });
+  html += `<div class="entrance-mat"></div>`;
+  html += `<div class="reading-room-label">Reading Room</div>
+    <div class="reading-room" onclick="openAbout()">${Array(8).fill('<div class="rr-table"></div>').join('')}</div>`;
+  html += `<div class="lounge" onclick="openGallery()">
+      <div class="lounge-label">Gallery Lounge<br>(click to browse art)</div>
+      <div class="table-round" style="left:14%; top:8%;"></div>
+      <div class="chair" style="left:10%; top:2%;"></div>
+      <div class="table-round" style="left:36%; top:32%;"></div>
+      <div class="chair" style="left:32%; top:26%;"></div><div class="chair" style="left:52%; top:38%;"></div>
+      <div class="table-round" style="left:20%; top:62%;"></div>
+      <div class="chair" style="left:16%; top:56%;"></div><div class="chair" style="left:36%; top:68%;"></div>
+    </div>`;
+  fp.innerHTML = html;
+}
+
+function enterEra(i) { currentEra = i; view = 'era'; selectedBook = null; showInfo = false; selectedArt = null; showArtInfo = false; selectedTimeline = null; renderAll(); }
+function backToFloor() { view = 'floor'; currentEra = null; selectedBook = null; selectedArt = null; selectedTimeline = null; renderAll(); }
+function openGallery() { view = 'gallery'; galleryPick = null; galleryPickInfo = false; renderAll(); }
+
+function openBook(bi) { selectedBook = eras[currentEra].books[bi]; showInfo = false; renderAll(); }
+function closeBook() { selectedBook = null; showInfo = false; renderAll(); }
+function openInfo(e) { e.stopPropagation(); showInfo = true; renderAll(); }
+function closeInfo() { showInfo = false; renderAll(); }
+
+function openArt() { selectedArt = eras[currentEra].art; showArtInfo = false; renderAll(); }
+function closeArt() { selectedArt = null; showArtInfo = false; renderAll(); }
+function openArtInfo(e) { e.stopPropagation(); showArtInfo = true; renderAll(); }
+function closeArtInfo() { showArtInfo = false; renderAll(); }
+
+function pickGalleryArt(i) { galleryPick = eras[i]; galleryPickInfo = false; renderAll(); }
+function closeGalleryPick() { galleryPick = null; galleryPickInfo = false; renderAll(); }
+function openGalleryPickInfo(e) { e.stopPropagation(); galleryPickInfo = true; renderAll(); }
+function closeGalleryPickInfo() { galleryPickInfo = false; renderAll(); }
+
+function openTimeline(i) { selectedTimeline = i; selectedPanelTimeline = null; renderAll(); }
+function closeTimeline() { selectedTimeline = null; renderAll(); }
+
+function openDidacticTimeline(i) { selectedPanelTimeline = { events: eras[i].panelEvents, name: eras[i].name, years: eras[i].years }; selectedTimeline = null; renderAll(); }
+function closePanelTimeline() { selectedPanelTimeline = null; renderAll(); }
+
+function openAbout() {
+  document.getElementById('overlayRoot').innerHTML += `
+    <div class="overlay" onclick="document.getElementById('aboutBox').remove()">
+      <div class="info-card about-card" onclick="event.stopPropagation()" id="aboutBox">
+        <button class="info-close" onclick="this.closest('.overlay').remove()">&times;</button>
+        <h2>Welcome to the Exhibit</h2>
+        <div class="info-section"><p>This museum walks through six eras of Black American poetry and art. Click any bookcase on the floor plan to step inside and browse its poems and artwork. Click a book for its cover, then the bookmark ribbon for historical context. Click the bookends on either side of a shelf for a timeline of major events from that era. A didactic panel beside each artwork adds further landmark events from that era. Visit the Gallery Lounge to browse all the featured artworks at once.</p></div>
+      </div>
+    </div>`;
+}
+
+function renderAll() {
+  const root = document.getElementById('overlayRoot');
+  root.innerHTML = '';
+
+  if (view === 'era' && currentEra !== null) {
+    const era = eras[currentEra];
+    root.innerHTML = `
+      <div class="full-overlay">
+        <button class="back-btn" onclick="backToFloor()">&larr; Floor Plan</button>
+        <div class="room">
+          <div class="wall" style="background:${era.wall};">
+            <div class="room-header"><div class="era-name">${era.name}</div><div class="era-years">${era.years}</div></div>
+            <div class="era-blurb">${era.blurb}</div>
+            <div class="wall-content">
+              <div class="frame-wrap" onclick="openArt()">
+                <div class="frame"><div class="frame-inner" style="background:${era.art.style};"></div></div>
+                <div class="art-caption"><b>${era.art.title}</b>${era.art.artist}, ${era.art.year}</div>
+              </div>
+              <div class="didactic-panel" onclick="openDidacticTimeline(currentEra)">
+                <div class="dp-title">${era.art.artist}</div>
+                <div class="dp-sub">About the Artist · ${era.art.year}</div>
+                <div class="dp-label">Biography</div>
+                <div class="dp-evdesc" style="margin-bottom:12px;">${era.art.bio}</div>
+                <div class="dp-label" style="margin-top:6px;">Related Events</div>
+                <div style="font-size:0.82rem; color:#3a2a1c; margin-top:8px;">Click this panel to view landmark events connected to the artist and artwork.</div>
+              </div>
+            </div>
+            <div class="bookcase">
+              <div class="books-row">
+                <div class="bookend" onclick="openTimeline(${currentEra})" title="View era timeline">
+                  ${bookendIcon()}
+                  <div class="bookend-label">Timeline</div>
+                </div>
+                ${era.books.map((b, bi) => `
+                  <div class="book-spine" style="background: linear-gradient(90deg, rgba(0,0,0,0.35), transparent 18%, transparent 82%, rgba(0,0,0,0.35)), linear-gradient(160deg, ${era.color1}, ${era.color2});" onclick="openBook(${bi})">
+                    <div class="spine-text">${b.title}</div>
+                  </div>`).join('')}
+                <div class="bookend" onclick="openTimeline(${currentEra})" title="View era timeline">
+                  ${bookendIcon()}
+                  <div class="bookend-label">Timeline</div>
+                </div>
+              </div>
+              <div class="shelf-board"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (view === 'gallery') {
+    root.innerHTML = `
+      <div class="full-overlay">
+        <button class="back-btn" onclick="backToFloor()">&larr; Floor Plan</button>
+        <div class="gallery-grid-wrap">
+          <div class="room-header" style="justify-content:center; margin-bottom:6px;"><div class="era-name">Gallery Lounge</div></div>
+          <div class="era-blurb" style="text-align:center; margin:0 auto 20px; max-width:600px;">Featured artworks from every era of the exhibit. Click any piece for its story.</div>
+          <div class="gallery-grid">
+            ${eras.map((era, i) => `
+              <div class="gallery-tile" onclick="pickGalleryArt(${i})">
+                <div class="frame"><div class="frame-inner" style="background:${era.art.style};"></div></div>
+                <div class="art-caption"><b>${era.art.title}</b>${era.art.artist}, ${era.art.year}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // book cover / info popups (era view)
+  if (selectedBook) {
+    const era = eras[currentEra];
+    if (showInfo) {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeInfo()">
+          <div class="info-card" onclick="event.stopPropagation()">
+            <button class="info-close" onclick="closeInfo()">&times;</button>
+            <h2>${selectedBook.title}</h2>
+            <div class="info-author-line">${selectedBook.author} · ${selectedBook.year} · ${era.name}</div>
+            <div class="info-section"><h3>About the Poet</h3><p>${selectedBook.bio}</p></div>
+            <div class="info-section"><h3>Publication Year</h3><p>${selectedBook.year}</p></div>
+            <div class="info-section"><h3>Sociopolitical Context</h3><p>${selectedBook.context}</p></div>
+          </div>
+        </div>`;
+    } else {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeBook()">
+          <div class="cover-card" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="closeBook()">&times;</button>
+            <div class="cover-face" style="background: linear-gradient(160deg, ${era.color1}, ${era.color2});">
+              <div class="bookmark-tab" onclick="openInfo(event)" title="Click for historical context">
+                <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2 L14.5 8.5 L21.5 9 L16 13.5 L18 20.5 L12 16.5 L6 20.5 L8 13.5 L2.5 9 L9.5 8.5 Z"/></svg>
+              </div>
+              <div class="cover-era-tag">${era.name}</div>
+              <div>
+                <div class="cover-title">${selectedBook.title}</div>
+                <div class="cover-author">${selectedBook.author}</div>
+                <div class="cover-year">${selectedBook.year}</div>
+              </div>
+              <div class="cover-hint">Click the bookmark &uarr; for historical context</div>
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
+  // art popups (era view)
+  if (selectedArt) {
+    const era = eras[currentEra], art = selectedArt;
+    if (showArtInfo) {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeArtInfo()">
+          <div class="info-card" onclick="event.stopPropagation()">
+            <button class="info-close" onclick="closeArtInfo()">&times;</button>
+            <h2>${art.title}</h2>
+            <div class="info-author-line">${art.artist} · ${art.year} · ${era.name}</div>
+            <div class="info-section"><h3>About the Artist</h3><p>${art.bio}</p></div>
+            <div class="info-section"><h3>Year Created</h3><p>${art.year}</p></div>
+            <div class="info-section"><h3>Sociopolitical Context</h3><p>${art.context}</p></div>
+          </div>
+        </div>`;
+    } else {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeArt()">
+          <div class="art-card" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="closeArt()">&times;</button>
+            <div class="art-frame-big">
+              <div class="art-canvas-big" style="background:${art.style};"></div>
+              <div class="art-plaque">
+                <div class="t">${art.title}</div>
+                <div class="s">${art.artist} · ${art.year}</div>
+                <button onclick="openArtInfo(event)">View Historical Context</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
+  // gallery pick popups
+  if (galleryPick) {
+    const era = galleryPick, art = era.art;
+    if (galleryPickInfo) {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeGalleryPickInfo()">
+          <div class="info-card" onclick="event.stopPropagation()">
+            <button class="info-close" onclick="closeGalleryPickInfo()">&times;</button>
+            <h2>${art.title}</h2>
+            <div class="info-author-line">${art.artist} · ${art.year} · ${era.name}</div>
+            <div class="info-section"><h3>About the Artist</h3><p>${art.bio}</p></div>
+            <div class="info-section"><h3>Year Created</h3><p>${art.year}</p></div>
+            <div class="info-section"><h3>Sociopolitical Context</h3><p>${art.context}</p></div>
+          </div>
+        </div>`;
+    } else {
+      root.innerHTML += `
+        <div class="overlay" onclick="closeGalleryPick()">
+          <div class="art-card" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="closeGalleryPick()">&times;</button>
+            <div class="art-frame-big">
+              <div class="art-canvas-big" style="background:${art.style};"></div>
+              <div class="art-plaque">
+                <div class="t">${art.title}</div>
+                <div class="s">${art.artist} · ${art.year}</div>
+                <button onclick="openGalleryPickInfo(event)">View Historical Context</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
+  // era timeline popup (triggered by bookends or didactic panels)
+  if (selectedPanelTimeline !== null) {
+    const panel = selectedPanelTimeline;
+    root.innerHTML += `
+      <div class="overlay" onclick="closePanelTimeline()">
+        <div class="timeline-card" onclick="event.stopPropagation()">
+          <button class="info-close" onclick="closePanelTimeline()">&times;</button>
+          <h2>${panel.name} — Related Events</h2>
+          <div class="timeline-era-line">${panel.years}</div>
+          <div class="tl-legend">${legendHTML}</div>
+          <div class="tl-track">
+            ${panel.events.map(ev => `
+              <div class="tl-event">
+                <div class="tl-icon" style="background:${typeColors[ev.type]}">${iconFor(ev.type)}</div>
+                <div class="tl-body">
+                  <div class="tl-year">${ev.year}<span class="tl-type" style="background:${typeColors[ev.type]}">${ev.type}</span></div>
+                  <div class="tl-title">${ev.title}</div>
+                  <div class="tl-desc">${ev.desc}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  } else if (selectedTimeline !== null) {
+    const era = eras[selectedTimeline];
+    root.innerHTML += `
+      <div class="overlay" onclick="closeTimeline()">
+        <div class="timeline-card" onclick="event.stopPropagation()">
+          <button class="info-close" onclick="closeTimeline()">&times;</button>
+          <h2>${era.name} — Timeline</h2>
+          <div class="timeline-era-line">${era.years}</div>
+          <div class="tl-legend">${legendHTML}</div>
+          <div class="tl-track">
+            ${era.timeline.map(ev => `
+              <div class="tl-event">
+                <div class="tl-icon" style="background:${typeColors[ev.type]}">${iconFor(ev.type)}</div>
+                <div class="tl-body">
+                  <div class="tl-year">${ev.year}<span class="tl-type" style="background:${typeColors[ev.type]}">${ev.type}</span></div>
+                  <div class="tl-title">${ev.title}</div>
+                  <div class="tl-desc">${ev.desc}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+renderFloorplan();
+renderAll();
+</script>
+</body>
+</html>
